@@ -1,573 +1,589 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Material Degradation Forecast Tool</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Degradation Forecast Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
 
-  <style>
-    :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --text-light: #64748b;
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --success: #16a34a;
-      --warning: #ea580c;
-      --danger: #dc2626;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-    }
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+        h1 { margin: 0; color: #2c3e50; }
+        h2 { color: #34495e; }
+        h3 { color: #7f8c8d; margin-bottom: 8px; }
 
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 2rem 1rem;
-      line-height: 1.6;
-    }
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr 1fr;
+            gap: 24px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
 
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
+        .panel {
+            background: rgba(255,255,255,0.85);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.4);
+        }
 
-    header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
+        .section {
+            margin-bottom: 22px;
+        }
 
-    header h1 {
-      font-size: 2.25rem;
-      font-weight: 700;
-      color: var(--text);
-    }
+        select, input[type="number"], button {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
 
-    header p {
-      font-size: 1.1rem;
-      color: var(--text-light);
-      margin-top: 0.5rem;
-    }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
 
-    .main-grid {
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 2rem;
-    }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
 
-    .sidebar {
-      background: var(--surface);
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: var(--shadow-md);
-      border: 1px solid var(--border);
-    }
+        #protection-options label {
+            display: block;
+            margin: 6px 0;
+            font-size: 14px;
+        }
 
-    .content {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
+        canvas {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
 
-    .card {
-      background: var(--surface);
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: var(--shadow-md);
-      border: 1px solid var(--border);
-    }
+        #risk-badge {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: #ecf0f1;
+        }
 
-    h2, h3 {
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
+        #insights {
+            line-height: 1.6;
+            font-size: 15px;
+        }
 
-    h2 { font-size: 1.4rem; color: var(--primary); }
-    h3 { font-size: 1.15rem; }
+        .comparison-charts {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
 
-    label {
-      display: block;
-      font-weight: 500;
-      margin-bottom: 0.4rem;
-      font-size: 0.95rem;
-      color: var(--text-light);
-    }
+        .comparison-charts canvas {
+            flex: 1;
+            max-height: 380px;
+        }
 
-    select, input[type="number"], input[type="range"] {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 1rem;
-      background: white;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
 
-    select:focus, input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-    }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
 
-    .checkbox-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 0.8rem;
-      margin-top: 0.5rem;
-    }
+        th {
+            background: #f8f9fa;
+        }
 
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.95rem;
-      cursor: pointer;
-    }
-
-    input[type="checkbox"] {
-      accent-color: var(--primary);
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    button {
-      padding: 0.75rem 1.5rem;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    #analyze-btn {
-      background: var(--primary);
-      color: white;
-      border: none;
-    }
-
-    #analyze-btn:hover {
-      background: var(--primary-dark);
-    }
-
-    #reset-btn {
-      background: #e2e8f0;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    #reset-btn:hover {
-      background: #cbd5e1;
-    }
-
-    .status {
-      padding: 1.2rem;
-      border-radius: 10px;
-      font-weight: 500;
-      text-align: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .loading { background: rgba(37,99,235,0.1); color: var(--primary); }
-    .error   { background: rgba(220,38,38,0.1); color: #b91c1c; }
-
-    .chart-card {
-      padding: 1.5rem;
-    }
-
-    .chart-container {
-      height: 340px;
-    }
-
-    .pill {
-      font-size: 1.8rem;
-      font-weight: 700;
-      text-align: center;
-      padding: 1.2rem;
-      border-radius: 12px;
-      margin-bottom: 1.2rem;
-    }
-
-    .pill.low    { background: rgba(22,163,74,0.1); color: #15803d; }
-    .pill.medium { background: rgba(234,179,8,0.1); color: #a16207; }
-    .pill.high   { background: rgba(220,38,38,0.1); color: #b91c1c; }
-
-    .insights-grid {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .insight-item {
-      background: #f8fafc;
-      padding: 1rem;
-      border-radius: 8px;
-      border-left: 4px solid var(--primary);
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-    }
-
-    .insight-icon {
-      font-size: 1.4rem;
-      color: var(--primary);
-      margin-top: 0.2rem;
-    }
-
-    @media (max-width: 1100px) {
-      .main-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .comparison-charts {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <h1>Material Degradation Forecast Tool</h1>
+<header>
+    <h1>🧪 Material Degradation Forecast Tool</h1>
     <p>Location-Aware Engineering Decision Dashboard</p>
-  </header>
+</header>
 
-  <div class="main-grid">
-    <!-- Left sidebar - Inputs -->
-    <div class="sidebar">
-      <div class="field">
-        <label>Country</label>
-        <select id="country-select">
-          <option value="">Select country...</option>
-        </select>
-      </div>
+<div class="container">
 
-      <div class="field">
-        <label>Material Family</label>
-        <select id="material-family">
-          <option value="metals">Metals</option>
-          <option value="polymers">Polymers</option>
-          <option value="ceramics">Ceramics</option>
-          <option value="composites">Composites</option>
-        </select>
-      </div>
+    <!-- INPUT PANEL -->
+    <div class="panel">
+        <h2>Inputs</h2>
 
-      <div class="field">
-        <label>Material</label>
-        <select id="material-select"></select>
-      </div>
-
-      <div class="field">
-        <label>Degradation Mode</label>
-        <select id="degradation-mode">
-          <option value="corrosion">Corrosion</option>
-          <option value="oxidation">Oxidation</option>
-          <option value="embrittlement">Embrittlement</option>
-          <option value="uv">UV / Environmental Degradation</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Protective Measures</label>
-        <div class="checkbox-grid">
-          <label class="checkbox-label"><input type="checkbox" value="coating"> Coating / Paint</label>
-          <label class="checkbox-label"><input type="checkbox" value="galvanizing"> Galvanizing</label>
-          <label class="checkbox-label"><input type="checkbox" value="anodizing"> Anodizing</label>
-          <label class="checkbox-label"><input type="checkbox" value="inhibitor"> Corrosion Inhibitor</label>
-          <label class="checkbox-label"><input type="checkbox" value="passivation"> Passivation</label>
-          <label class="checkbox-label"><input type="checkbox" value="design"> Design Optimization</label>
-          <label class="checkbox-label"><input type="checkbox" value="thermal"> Thermal Spray</label>
+        <div class="section">
+            <h3>🌍 Country</h3>
+            <select id="country-select"></select>
+            <div id="country-info" style="margin-top:8px; font-size:14px; color:#555;"></div>
         </div>
-      </div>
 
-      <div class="field">
-        <label>Time Horizon (years)</label>
-        <input type="range" id="years" min="1" max="50" value="20">
-        <div style="text-align:center; margin-top:0.5rem;" id="years-value">20 years</div>
-      </div>
+        <div class="section">
+            <h3>🧱 Material Family</h3>
+            <select id="material-family">
+                <option value="Metal">Metals</option>
+                <option value="Polymer">Polymers</option>
+                <option value="Ceramic">Ceramics</option>
+                <option value="Composite">Composites</option>
+            </select>
 
-      <div class="btn-group">
-        <button id="analyze-btn">Analyze</button>
-        <button id="reset-btn">Reset</button>
-      </div>
+            <h3>Material</h3>
+            <select id="material-select"></select>
+            <div id="material-info" style="margin-top:8px; font-size:14px; color:#555;"></div>
+        </div>
+
+        <div class="section">
+            <h3>⚠️ Degradation Mode</h3>
+            <select id="degradation-mode"></select>
+        </div>
+
+        <div class="section">
+            <h3>🛡️ Protective Strategies</h3>
+            <div id="protection-options"></div>
+        </div>
+
+        <div class="section">
+            <h3>Forecast Period (years)</h3>
+            <input type="number" id="years" value="25" min="5" max="100" step="5">
+        </div>
+
+        <button id="calculate">Calculate Forecast</button>
     </div>
 
-    <!-- Right side - Results -->
-    <div class="content">
-      <div id="status" class="status hidden"></div>
-
-      <div class="card chart-card">
-        <h3>Degradation Forecast</h3>
-        <div class="chart-container">
-          <canvas id="degradation-chart"></canvas>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Risk Assessment</h3>
-        <div id="risk-pill" class="pill">Select inputs to begin</div>
-      </div>
-
-      <div class="card">
-        <h3>Engineering Insights & Recommendations</h3>
-        <div id="insights" class="insights-grid"></div>
-      </div>
+    <!-- MAIN VISUALIZATION -->
+    <div class="panel">
+        <h2>Degradation Forecast</h2>
+        <canvas id="degradation-chart" height="320"></canvas>
+        <div id="risk-badge">—</div>
+        <div id="insights"></div>
     </div>
-  </div>
+
+    <!-- COMPARISON -->
+    <div class="panel">
+        <h2>Comparison Dashboard</h2>
+
+        <div class="section">
+            <select id="comparison-mode">
+                <option>Material vs Material</option>
+                <option>Country vs Country</option>
+                <option>Protection vs No Protection</option>
+            </select>
+        </div>
+
+        <button id="compare">Run Comparison</button>
+
+        <div class="comparison-charts">
+            <canvas id="chart-a" height="300"></canvas>
+            <canvas id="chart-b" height="300"></canvas>
+        </div>
+
+        <div id="comparison-metrics"></div>
+    </div>
+
 </div>
 
 <script>
-  // ────────────────────────────────────────────────
-  // Data
-  // ────────────────────────────────────────────────
+// ────────────────────────────────────────────────
+// DATA (expanded realistic dataset)
+// ────────────────────────────────────────────────
 
-  const materialData = {
-    metals: [
-      { name: "Carbon Steel", corrosion: 0.3, oxidation: 0.5, embrittlement: 0.4, uv: 0.9, cost: 0.4 },
-      { name: "Stainless Steel 304", corrosion: 0.85, oxidation: 0.75, embrittlement: 0.6, uv: 0.9, cost: 2.0 },
-      { name: "Stainless Steel 316", corrosion: 0.9, oxidation: 0.8, embrittlement: 0.65, uv: 0.9, cost: 2.5 },
-      { name: "Aluminum 6061", corrosion: 0.7, oxidation: 0.4, embrittlement: 0.5, uv: 0.8, cost: 1.5 },
-      { name: "Titanium Grade 5", corrosion: 0.95, oxidation: 0.85, embrittlement: 0.7, uv: 0.95, cost: 6.0 },
-      { name: "Copper C110", corrosion: 0.6, oxidation: 0.6, embrittlement: 0.4, uv: 0.7, cost: 2.2 },
-      { name: "Inconel 625", corrosion: 0.95, oxidation: 0.95, embrittlement: 0.75, uv: 0.9, cost: 8.0 }
-    ],
-    polymers: [
-      { name: "ABS", corrosion: 0.6, oxidation: 0.3, embrittlement: 0.2, uv: 0.4, cost: 0.8 },
-      { name: "Nylon 6/6", corrosion: 0.5, oxidation: 0.4, embrittlement: 0.25, uv: 0.4, cost: 1.2 },
-      { name: "PEEK", corrosion: 0.9, oxidation: 0.8, embrittlement: 0.4, uv: 0.5, cost: 15.0 },
-      { name: "Polycarbonate", corrosion: 0.6, oxidation: 0.5, embrittlement: 0.3, uv: 0.4, cost: 1.8 },
-      { name: "PTFE", corrosion: 0.95, oxidation: 0.9, embrittlement: 0.6, uv: 0.7, cost: 4.0 }
-    ],
-    ceramics: [
-      { name: "Alumina (99%)", corrosion: 0.95, oxidation: 0.9, embrittlement: 0.2, uv: 0.95, cost: 6.0 },
-      { name: "Zirconia", corrosion: 0.9, oxidation: 0.85, embrittlement: 0.3, uv: 0.9, cost: 8.5 }
-    ],
-    composites: [
-      { name: "CFRP (Epoxy)", corrosion: 0.9, oxidation: 0.6, embrittlement: 0.8, uv: 0.7, cost: 12.0 },
-      { name: "GFRP (Polyester)", corrosion: 0.75, oxidation: 0.5, embrittlement: 0.5, uv: 0.6, cost: 4.0 }
-    ]
-  };
+const countries = [
+    {country:"Norway", climateZone:"Cold", humidityIndex:0.65, temperatureIndex:0.35, coastalExposure:0.85, pollutionIndex:0.25, uvIndex:0.45},
+    {country:"Nigeria", climateZone:"Tropical", humidityIndex:0.82, temperatureIndex:0.78, coastalExposure:0.65, pollutionIndex:0.55, uvIndex:0.75},
+    {country:"India", climateZone:"Tropical", humidityIndex:0.76, temperatureIndex:0.82, coastalExposure:0.55, pollutionIndex:0.88, uvIndex:0.82},
+    {country:"United States", climateZone:"Varied", humidityIndex:0.62, temperatureIndex:0.58, coastalExposure:0.48, pollutionIndex:0.42, uvIndex:0.65},
+    {country:"Brazil", climateZone:"Tropical", humidityIndex:0.84, temperatureIndex:0.76, coastalExposure:0.78, pollutionIndex:0.58, uvIndex:0.78},
+    {country:"China", climateZone:"Varied", humidityIndex:0.68, temperatureIndex:0.62, coastalExposure:0.52, pollutionIndex:0.82, uvIndex:0.68},
+    {country:"Australia", climateZone:"Arid", humidityIndex:0.38, temperatureIndex:0.72, coastalExposure:0.88, pollutionIndex:0.35, uvIndex:0.92},
+    {country:"Russia", climateZone:"Cold", humidityIndex:0.52, temperatureIndex:0.28, coastalExposure:0.42, pollutionIndex:0.68, uvIndex:0.38},
+    {country:"Indonesia", climateZone:"Tropical", humidityIndex:0.88, temperatureIndex:0.80, coastalExposure:0.92, pollutionIndex:0.62, uvIndex:0.85},
+    {country:"Saudi Arabia", climateZone:"Arid", humidityIndex:0.22, temperatureIndex:0.92, coastalExposure:0.68, pollutionIndex:0.78, uvIndex:0.95},
+    {country:"Japan", climateZone:"Temperate", humidityIndex:0.74, temperatureIndex:0.58, coastalExposure:0.88, pollutionIndex:0.48, uvIndex:0.62},
+    {country:"Germany", climateZone:"Temperate", humidityIndex:0.68, temperatureIndex:0.48, coastalExposure:0.45, pollutionIndex:0.38, uvIndex:0.48},
+    // ... you can add 30–50 more countries here
+];
 
-  const degradationWeights = {
-    corrosion:     { humidity:0.4, temp:0.3, pollution:0.2, coastal:0.1 },
-    oxidation:     { humidity:0.1, temp:0.6, pollution:0.2, coastal:0.1 },
-    embrittlement: { humidity:0.3, temp:0.2, pollution:0.4, coastal:0.1 },
-    uv:            { humidity:0.2, temp:0.2, pollution:0.1, coastal:0.1, uv:0.4 }
-  };
+const materials = [
+    {material:"Carbon Steel", family:"Metal", corrosionResistance:0.28, oxidationResistance:0.45, embrittlementResistance:0.38, uvResistance:0.88, baseCostIndex:0.35},
+    {material:"Stainless Steel 304", family:"Metal", corrosionResistance:0.78, oxidationResistance:0.72, embrittlementResistance:0.62, uvResistance:0.90, baseCostIndex:0.65},
+    {material:"Aluminum 6061", family:"Metal", corrosionResistance:0.68, oxidationResistance:0.82, embrittlementResistance:0.55, uvResistance:0.85, baseCostIndex:0.52},
+    {material:"Copper C110", family:"Metal", corrosionResistance:0.58, oxidationResistance:0.55, embrittlementResistance:0.48, uvResistance:0.78, baseCostIndex:0.72},
+    {material:"Titanium Grade 5", family:"Metal", corrosionResistance:0.94, oxidationResistance:0.82, embrittlementResistance:0.75, uvResistance:0.92, baseCostIndex:1.40},
+    {material:"Polyethylene (HDPE)", family:"Polymer", corrosionResistance:0.92, oxidationResistance:0.35, embrittlementResistance:0.42, uvResistance:0.38, baseCostIndex:0.28},
+    {material:"PVC", family:"Polymer", corrosionResistance:0.82, oxidationResistance:0.40, embrittlementResistance:0.52, uvResistance:0.48, baseCostIndex:0.32},
+    {material:"CFRP (Carbon Fiber)", family:"Composite", corrosionResistance:0.88, oxidationResistance:0.55, embrittlementResistance:0.45, uvResistance:0.62, baseCostIndex:1.20},
+    {material:"Silicon Carbide", family:"Ceramic", corrosionResistance:0.96, oxidationResistance:0.92, embrittlementResistance:0.85, uvResistance:0.95, baseCostIndex:1.80},
+    // ... you can add 20–40 more materials
+];
 
-  const protectionData = {
-    coating:        { eff:0.55, cost:1.2, maint:6  },
-    galvanizing:    { eff:0.6,  cost:1.4, maint:7  },
-    anodizing:      { eff:0.45, cost:1.3, maint:5  },
-    inhibitor:      { eff:0.4,  cost:1.1, maint:4  },
-    passivation:    { eff:0.5,  cost:1.15, maint:6 },
-    design:         { eff:0.35, cost:1.05, maint:8 },
-    'thermal-spray':{ eff:0.65, cost:1.5, maint:5  }
-  };
+const degradationModes = [
+    {mode:"Corrosion", humidityWeight:0.40, temperatureWeight:0.28, pollutionWeight:0.18, coastalWeight:0.14},
+    {mode:"Oxidation", humidityWeight:0.18, temperatureWeight:0.42, pollutionWeight:0.28, coastalWeight:0.12},
+    {mode:"Embrittlement", humidityWeight:0.32, temperatureWeight:0.32, pollutionWeight:0.22, coastalWeight:0.14},
+    {mode:"UV Degradation", humidityWeight:0.12, temperatureWeight:0.18, pollutionWeight:0.10, coastalWeight:0.08, uvWeight:0.52},
+    {mode:"Pitting Corrosion", humidityWeight:0.38, temperatureWeight:0.26, pollutionWeight:0.24, coastalWeight:0.12},
+    {mode:"Stress Corrosion Cracking", humidityWeight:0.42, temperatureWeight:0.22, pollutionWeight:0.20, coastalWeight:0.16},
+];
 
-  // ────────────────────────────────────────────────
-  // DOM
-  // ────────────────────────────────────────────────
+const protectiveStrategies = [
+    {strategy:"Epoxy Coating", applicableTo:["Metal","Composite"], effectiveness:0.58, costMultiplier:1.25, maintenanceIntervalYears:6},
+    {strategy:"Hot-Dip Galvanizing", applicableTo:["Metal"], effectiveness:0.72, costMultiplier:1.35, maintenanceIntervalYears:12},
+    {strategy:"Anodizing (Type III)", applicableTo:["Metal"], effectiveness:0.62, costMultiplier:1.18, maintenanceIntervalYears:8},
+    {strategy:"Thermal Spray (Al/Zn)", applicableTo:["Metal"], effectiveness:0.68, costMultiplier:1.45, maintenanceIntervalYears:9},
+    {strategy:"Corrosion Inhibitor (closed system)", applicableTo:["Metal"], effectiveness:0.52, costMultiplier:1.12, maintenanceIntervalYears:4},
+    {strategy:"Passivation (stainless)", applicableTo:["Metal"], effectiveness:0.48, costMultiplier:1.08, maintenanceIntervalYears:0},
+    {strategy:"Increased Wall Thickness (+30%)", applicableTo:["All"], effectiveness:0.38, costMultiplier:1.55, maintenanceIntervalYears:0},
+    {strategy:"Good Drainage Design", applicableTo:["All"], effectiveness:0.28, costMultiplier:1.15, maintenanceIntervalYears:0},
+    {strategy:"Dielectric Isolation", applicableTo:["Metal"], effectiveness:0.35, costMultiplier:1.10, maintenanceIntervalYears:0},
+    {strategy:"UV Stabilizers + Antioxidants", applicableTo:["Polymer"], effectiveness:0.60, costMultiplier:1.12, maintenanceIntervalYears:5},
+];
 
-  const els = {
-    country:       document.getElementById('country-select'),
-    family:        document.getElementById('material-family'),
-    material:      document.getElementById('material-select'),
-    mode:          document.getElementById('degradation-mode'),
-    years:         document.getElementById('years'),
-    yearsValue:    document.getElementById('years-value'),
-    analyze:       document.getElementById('analyze-btn'),
-    reset:         document.getElementById('reset-btn'),
-    status:        document.getElementById('status'),
-    pill:          document.getElementById('risk-pill'),
-    insights:      document.getElementById('insights'),
-    chart:         document.getElementById('degradation-chart').getContext('2d')
-  };
+// ────────────────────────────────────────────────
+// CALCULATION FUNCTIONS
+// ────────────────────────────────────────────────
 
-  let chartInstance = null;
+function calculateEnvironmentalSeverity(country) {
+    return (
+        country.humidityIndex    * 0.35 +
+        country.temperatureIndex * 0.25 +
+        country.pollutionIndex   * 0.20 +
+        country.coastalExposure  * 0.15 +
+        (country.uvIndex || 0.5) * 0.05
+    );
+}
 
-  // ────────────────────────────────────────────────
-  // Country loading
-  // ────────────────────────────────────────────────
+function getResistance(material, mode) {
+    if (mode === "Corrosion")              return material.corrosionResistance;
+    if (mode === "Oxidation")              return material.oxidationResistance;
+    if (mode === "Embrittlement")          return material.embrittlementResistance;
+    if (mode === "UV Degradation")         return material.uvResistance;
+    return 0.5; // fallback
+}
 
-  async function loadCountries() {
-    try {
-      const r = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2');
-      const data = await r.json();
-      data.sort((a,b) => a.name.common.localeCompare(b.name.common));
-      data.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.cca2;
-        o.textContent = c.name.common;
-        els.country.appendChild(o);
-      });
-      els.country.value = 'US'; // default
-    } catch {
-      ['United States','Norway','Germany','China','India','Nigeria','Japan','United Kingdom']
-        .forEach(c => {
-          const o = document.createElement('option');
-          o.value = c;
-          o.textContent = c;
-          els.country.appendChild(o);
+function calculateBaseDegradation(material, modeObj, severity) {
+    const resistance = getResistance(material, modeObj.mode);
+    return severity * (1 - resistance);
+}
+
+function applyProtection(baseRate, selectedStrategies) {
+    let rate = baseRate;
+    selectedStrategies.forEach(s => rate *= (1 - s.effectiveness));
+    return rate;
+}
+
+function generateDegradationCurve(rate, years) {
+    const curve = [];
+    for (let y = 1; y <= years; y++) {
+        // Slightly non-linear (accelerating) degradation
+        const progress = rate * y * (1 + 0.015 * y);
+        curve.push({
+            year: y,
+            degradation: Math.min(progress * 100, 100)
         });
     }
-  }
+    return curve;
+}
 
-  // ────────────────────────────────────────────────
-  // Material family → class
-  // ────────────────────────────────────────────────
+function classifyRisk(value) {
+    if (value < 30) return {level:"Low", color:"#27ae60", bg:"#e8f5e9"};
+    if (value < 65) return {level:"Moderate", color:"#f39c12", bg:"#fff3e0"};
+    return {level:"High", color:"#c0392b", bg:"#ffebee"};
+}
 
-  function updateMaterialOptions() {
-    const family = els.family.value;
-    els.material.innerHTML = '';
-    materialData[family].forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m.name;
-      opt.textContent = m.name;
-      els.material.appendChild(opt);
+function calculateLifecycleCostEstimate(material, strategies, years, rate) {
+    let cost = material.baseCostIndex * 10000;
+    strategies.forEach(s => {
+        cost *= s.costMultiplier;
+        if (s.maintenanceIntervalYears > 0) {
+            const maintCount = Math.floor(years / s.maintenanceIntervalYears);
+            cost += maintCount * 1200;
+        }
     });
-  }
+    cost += rate * years * 180; // degradation penalty
+    return Math.round(cost);
+}
 
-  // ────────────────────────────────────────────────
-  // Core calculation & update
-  // ────────────────────────────────────────────────
+// ────────────────────────────────────────────────
+// UI INITIALIZATION
+// ────────────────────────────────────────────────
 
-  function runForecast() {
-    els.status.className = 'status loading';
-    els.status.textContent = 'Calculating degradation forecast...';
-    els.status.classList.remove('hidden');
+document.addEventListener('DOMContentLoaded', () => {
+    // Countries
+    const countrySel = document.getElementById('country-select');
+    countries.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.country;
+        opt.textContent = c.country;
+        countrySel.appendChild(opt);
+    });
 
-    setTimeout(() => { // simulate calculation
-      const country = els.country.value;
-      const family = els.family.value;
-      const matName = els.material.value;
-      const mode = els.mode.value;
-      const years = parseInt(els.years.value);
+    // Material family → material cascade
+    const familySel = document.getElementById('material-family');
+    const matSel = document.getElementById('material-select');
 
-      const material = materialData[family].find(m => m.name === matName);
-      if (!material) return;
+    function updateMaterials() {
+        matSel.innerHTML = '';
+        const fam = familySel.value;
+        materials
+            .filter(m => m.family === fam)
+            .forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.material;
+                opt.textContent = m.material;
+                matSel.appendChild(opt);
+            });
+        updateMaterialInfo();
+    }
 
-      // Simulated environmental factor (0–1)
-      const envSeverity = 0.3 + Math.random() * 0.5; // placeholder – use real data later
+    familySel.addEventListener('change', updateMaterials);
+    matSel.addEventListener('change', updateMaterialInfo);
 
-      // Base resistance (0–1, higher = better)
-      const resistance = mode === 'corrosion' ? material.corrosion :
-                        mode === 'oxidation' ? material.oxidation :
-                        mode === 'embrittlement' ? material.embrittlement : material.uv;
+    function updateMaterialInfo() {
+        const matName = matSel.value;
+        const mat = materials.find(m => m.material === matName);
+        if (mat) {
+            document.getElementById('material-info').innerHTML =
+                `Family: <b>${mat.family}</b> • Cost index: <b>${mat.baseCostIndex.toFixed(2)}</b>`;
+        }
+    }
 
-      // Base degradation rate
-      let rate = envSeverity * (1 - resistance);
+    updateMaterials(); // initial
 
-      // Apply protections
-      document.querySelectorAll('.checkbox-grid input:checked').forEach(cb => {
-        const p = protectionData[cb.value];
-        if (p) rate *= (1 - p.eff);
-      });
+    // Degradation modes
+    const modeSel = document.getElementById('degradation-mode');
+    degradationModes.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.mode;
+        opt.textContent = d.mode;
+        modeSel.appendChild(opt);
+    });
 
-      // Generate curve
-      const curve = [];
-      for (let y = 1; y <= years; y++) {
-        curve.push(Math.min(rate * y * 100, 100));
-      }
+    // Protection checkboxes
+    const protDiv = document.getElementById('protection-options');
+    protectiveStrategies.forEach(s => {
+        const label = document.createElement('label');
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.value = s.strategy;
+        label.appendChild(chk);
+        label.append(' ' + s.strategy);
+        protDiv.appendChild(label);
+    });
 
-      // Risk level
-      const finalDeg = curve[curve.length-1];
-      let riskLevel = finalDeg < 30 ? 'low' :
-                      finalDeg < 60 ? 'medium' : 'high';
+    // Buttons
+    document.getElementById('calculate').addEventListener('click', runForecast);
+    document.getElementById('compare').addEventListener('click', runComparison);
+});
 
-      els.pill.textContent = riskLevel === 'low' ? 'Low Risk' :
-                             riskLevel === 'medium' ? 'Moderate Risk' : 'High Risk';
-      els.pill.className = `pill ${riskLevel}`;
+// ────────────────────────────────────────────────
+// MAIN FORECAST
+// ────────────────────────────────────────────────
 
-      // Insights
-      els.insights.innerHTML = '';
-      const tips = [
-        `Estimated degradation after ${years} years: ${finalDeg.toFixed(1)}%`,
-        `Primary driver: ${mode.charAt(0).toUpperCase() + mode.slice(1)}`,
-        `Material resistance rating: ${(resistance * 100).toFixed(0)}%`,
-        finalDeg > 50 ? 'Consider more robust protection strategy.' : 'Current setup appears adequate for this timeframe.'
-      ];
+let mainChart = null;
 
-      tips.forEach(t => {
-        const div = document.createElement('div');
-        div.className = 'insight-item';
-        div.innerHTML = `<i class="fas fa-info-circle"></i> ${t}`;
-        els.insights.appendChild(div);
-      });
+function runForecast() {
+    const countryName = document.getElementById('country-select').value;
+    const country = countries.find(c => c.country === countryName);
+    if (!country) return alert("Please select a country");
 
-      // Chart
-      if (chartInstance) chartInstance.destroy();
+    const matName = document.getElementById('material-select').value;
+    const material = materials.find(m => m.material === matName);
+    if (!material) return alert("Please select a material");
 
-      chartInstance = new Chart(els.chart, {
+    const modeName = document.getElementById('degradation-mode').value;
+    const mode = degradationModes.find(d => d.mode === modeName);
+    if (!mode) return alert("Please select a degradation mode");
+
+    const selectedStrat = Array.from(
+        document.querySelectorAll('#protection-options input:checked')
+    ).map(chk => protectiveStrategies.find(s => s.strategy === chk.value));
+
+    const years = parseInt(document.getElementById('years').value) || 25;
+
+    // Calculations
+    const severity = calculateEnvironmentalSeverity(country);
+    const baseRate = calculateBaseDegradation(material, mode, severity);
+    const effRate = applyProtection(baseRate, selectedStrat);
+    const curve = generateDegradationCurve(effRate, years);
+    const finalDeg = curve[curve.length-1].degradation;
+    const risk = classifyRisk(finalDeg);
+    const lifecycleCost = calculateLifecycleCostEstimate(material, selectedStrat, years, effRate);
+
+    // Chart
+    const ctx = document.getElementById('degradation-chart').getContext('2d');
+    if (mainChart) mainChart.destroy();
+
+    mainChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: Array.from({length: years}, (_,i) => `Year ${i+1}`),
-          datasets: [{
-            label: 'Degradation (%)',
-            data: curve,
-            borderColor: riskLevel === 'high' ? '#dc2626' :
-                         riskLevel === 'medium' ? '#ea580c' : '#16a34a',
-            backgroundColor: 'rgba(37,99,235,0.08)',
-            tension: 0.3,
-            fill: true
-          }]
+            labels: curve.map(p => p.year),
+            datasets: [{
+                label: 'Degradation Severity (%)',
+                data: curve.map(p => p.degradation.toFixed(1)),
+                borderColor: '#16a085',
+                backgroundColor: 'rgba(22,160,133,0.08)',
+                tension: 0.2,
+                fill: true,
+                pointRadius: 3
+            }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { min: 0, max: 100, title: { display: true, text: 'Degradation Level (%)' } },
-            x: { title: { display: true, text: 'Time' } }
-          },
-          plugins: {
-            legend: { display: false }
-          }
+            responsive: true,
+            scales: {
+                y: { min: 0, max: 100, title: { display: true, text: 'Degradation (%)' } },
+                x: { title: { display: true, text: 'Years' } }
+            },
+            plugins: {
+                legend: { position: 'top' }
+            }
         }
-      });
+    });
 
-      els.status.classList.add('hidden');
-    }, 600);
-  }
+    // Risk badge
+    document.getElementById('risk-badge').style.background = risk.bg;
+    document.getElementById('risk-badge').style.color = risk.color;
+    document.getElementById('risk-badge').textContent = `Risk: ${risk.level} (${finalDeg.toFixed(1)}%)`;
 
-  // ────────────────────────────────────────────────
-  // Events
-  // ────────────────────────────────────────────────
+    // Insights
+    let txt = `<strong>Final degradation after ${years} years:</strong> ${finalDeg.toFixed(1)}%<br>`;
+    txt += `<strong>Estimated lifecycle cost index:</strong> ~$${lifecycleCost.toLocaleString()}<br><br>`;
 
-  els.analyze.onclick = runForecast;
+    if (selectedStrat.length > 0) {
+        txt += "<strong>Protective measures applied:</strong><ul>";
+        selectedStrat.forEach(s => {
+            txt += `<li>${s.strategy} — reduces rate by ${(s.effectiveness*100).toFixed(0)}%, maintenance every ${s.maintenanceIntervalYears} years</li>`;
+        });
+        txt += "</ul>";
+    } else {
+        txt += "<em>No protective strategies selected.</em><br>";
+    }
 
-  els.reset.onclick = () => {
-    els.family.value = 'metals';
-    updateMaterialOptions();
-    els.material.value = materialData['metals'][0].name;
-    els.mode.value = 'corrosion';
-    els.years.value = 20;
-    els.yearsValue.textContent = '20 years';
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    if (chartInstance) chartInstance.destroy();
-    els.pill.textContent = 'Select inputs to begin';
-    els.pill.className = 'pill';
-    els.insights.innerHTML = '';
-    els.status.classList.add('hidden');
-  };
+    document.getElementById('insights').innerHTML = txt;
 
-  els.years.oninput = () => {
-    els.yearsValue.textContent = `${els.years.value} years`;
-  };
+    // Country quick info
+    document.getElementById('country-info').innerHTML =
+        `Climate: <b>${country.climateZone}</b> • Humidity: <b>${country.humidityIndex}</b> • Pollution: <b>${country.pollutionIndex}</b>`;
+}
 
-  els.family.onchange = updateMaterialOptions;
+// ────────────────────────────────────────────────
+// COMPARISON (simple version — Material vs Material)
+// ────────────────────────────────────────────────
 
-  // Init
-  updateMaterialOptions();
-  loadCountries(); // async – will populate dropdown
+let compChartA = null, compChartB = null;
+
+function runComparison() {
+    const mode = document.getElementById('comparison-mode').value;
+    if (mode !== "Material vs Material") {
+        alert("Only Material vs Material comparison is implemented in this version.");
+        return;
+    }
+
+    // For demo: compare first two metals (you can extend with selectors)
+    const country = countries[0]; // Norway as reference
+    const matA = materials[0];    // Carbon Steel
+    const matB = materials[1];    // Stainless 304
+    const degMode = degradationModes[0];
+    const years = 25;
+
+    const sev = calculateEnvironmentalSeverity(country);
+
+    const rateA = applyProtection(calculateBaseDegradation(matA, degMode, sev), []);
+    const rateB = applyProtection(calculateBaseDegradation(matB, degMode, sev), []);
+
+    const curveA = generateDegradationCurve(rateA, years);
+    const curveB = generateDegradationCurve(rateB, years);
+
+    const finalA = curveA[curveA.length-1].degradation;
+    const finalB = curveB[curveB.length-1].degradation;
+
+    const riskA = classifyRisk(finalA);
+    const riskB = classifyRisk(finalB);
+
+    // Chart A
+    const ctxA = document.getElementById('chart-a').getContext('2d');
+    if (compChartA) compChartA.destroy();
+    compChartA = new Chart(ctxA, {
+        type: 'line',
+        data: {
+            labels: curveA.map(p => p.year),
+            datasets: [{
+                label: matA.material,
+                data: curveA.map(p => p.degradation.toFixed(1)),
+                borderColor: '#e74c3c',
+                tension: 0.2
+            }]
+        },
+        options: { scales: { y: { min:0, max:100 } } }
+    });
+
+    // Chart B
+    const ctxB = document.getElementById('chart-b').getContext('2d');
+    if (compChartB) compChartB.destroy();
+    compChartB = new Chart(ctxB, {
+        type: 'line',
+        data: {
+            labels: curveB.map(p => p.year),
+            datasets: [{
+                label: matB.material,
+                data: curveB.map(p => p.degradation.toFixed(1)),
+                borderColor: '#2ecc71',
+                tension: 0.2
+            }]
+        },
+        options: { scales: { y: { min:0, max:100 } } }
+    });
+
+    // Metrics table
+    document.getElementById('comparison-metrics').innerHTML = `
+        <table>
+            <tr><th>Metric</th><th>${matA.material}</th><th>${matB.material}</th></tr>
+            <tr><td>Final Degradation</td><td>${finalA.toFixed(1)}%</td><td>${finalB.toFixed(1)}%</td></tr>
+            <tr><td>Risk Level</td><td style="color:${riskA.color}">${riskA.level}</td><td style="color:${riskB.color}">${riskB.level}</td></tr>
+            <tr><td>Base Cost Index</td><td>${matA.baseCostIndex.toFixed(2)}</td><td>${matB.baseCostIndex.toFixed(2)}</td></tr>
+        </table>
+        <p style="font-size:14px; color:#777; margin-top:12px;">
+            (Comparison uses default environment: ${country.country} — no protections applied)
+        </p>
+    `;
+}
 </script>
+
 </body>
 </html>
