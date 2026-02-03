@@ -692,9 +692,9 @@ function calculateBaseDegradation(material, mode, severity) {
     return severity * (1 - resistance);
 }
 
-function applyProtection(baseRate, selectedStrategies) {
+function applyProtection(baseRate, strategies, material) {
     let rate = baseRate;
-    selectedStrategies.forEach(s => {
+    strategies.forEach(s => {
         if (s.applicableTo.includes("All") || s.applicableTo.includes(material.family)) {
             rate *= (1 - s.effectiveness);
         }
@@ -943,7 +943,7 @@ function runForecast() {
 
     const severity = calculateEnvironmentalSeverity(country, mode);
     const baseRate = calculateBaseDegradation(material, mode, severity);
-    const effRate = applyProtection(baseRate, selectedStrat);
+    const effRate = applyProtection(baseRate, selectedStrat, material);
     const curve = generateDegradationCurve(effRate, years);
     const finalDeg = curve[curve.length - 1].degradation;
     const risk = classifyRisk(finalDeg);
@@ -1087,7 +1087,7 @@ function runComparison() {
     // Calculate for A and B
     const sevA = calculateEnvironmentalSeverity(configA.country, configA.mode);
     const baseRateA = calculateBaseDegradation(configA.material, configA.mode, sevA);
-    const effRateA = applyProtection(baseRateA, configA.strategies);
+    const effRateA = applyProtection(baseRateA, configA.strategies, configA.material);
     const curveA = generateDegradationCurve(effRateA, years);
     const finalA = curveA[curveA.length - 1].degradation;
     const riskA = classifyRisk(finalA);
@@ -1095,4 +1095,46 @@ function runComparison() {
 
     const sevB = calculateEnvironmentalSeverity(configB.country, configB.mode);
     const baseRateB = calculateBaseDegradation(configB.material, configB.mode, sevB);
-    const effRateB
+    const effRateB = applyProtection(baseRateB, configB.strategies, configB.material);
+    const curveB = generateDegradationCurve(effRateB, years);
+    const finalB = curveB[curveB.length - 1].degradation;
+    const riskB = classifyRisk(finalB);
+    const costB = calculateLifecycleCostEstimate(configB.material, configB.strategies, years, effRateB);
+
+    // Charts
+    const ctxA = document.getElementById('chart-a').getContext('2d');
+    if (compChartA) compChartA.destroy();
+    compChartA = new Chart(ctxA, {
+        type: 'line',
+        data: {
+            labels: curveA.map(p => p.year),
+            datasets: [{label: configA.label, data: curveA.map(p => p.degradation), borderColor: 'blue', tension: 0.3}]
+        },
+        options: {scales: {y: {min: 0, max: 100}}}
+    });
+
+    const ctxB = document.getElementById('chart-b').getContext('2d');
+    if (compChartB) compChartB.destroy();
+    compChartB = new Chart(ctxB, {
+        type: 'line',
+        data: {
+            labels: curveB.map(p => p.year),
+            datasets: [{label: configB.label, data: curveB.map(p => p.degradation), borderColor: 'green', tension: 0.3}]
+        },
+        options: {scales: {y: {min: 0, max: 100}}}
+    });
+
+    // Metrics
+    let metrics = `<table>
+        <tr><th>Metric</th><th>${configA.label}</th><th>${configB.label}</th></tr>
+        <tr><td>Final Degradation (%)</td><td>${finalA.toFixed(1)}</td><td>${finalB.toFixed(1)}</td></tr>
+        <tr><td>Risk Level</td><td style="color:${riskA.color}">${riskA.level}</td><td style="color:${riskB.color}">${riskB.level}</td></tr>
+        <tr><td>Lifecycle Cost ($)</td><td>${costA.toLocaleString()}</td><td>${costB.toLocaleString()}</td></tr>
+        <tr><td>Peak Rate</td><td>${effRateA.toFixed(3)}</td><td>${effRateB.toFixed(3)}</td></tr>
+    </table>`;
+    document.getElementById('comparison-metrics').innerHTML = metrics;
+}
+</script>
+
+</body>
+</html>
