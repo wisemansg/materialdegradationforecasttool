@@ -87,6 +87,10 @@
             color: #333;
         }
 
+        select[multiple] {
+            height: 150px; /* Adjust height for multi-select */
+        }
+
         body.dark select, body.dark input[type="number"] {
             background: #333;
             color: #ddd;
@@ -284,8 +288,8 @@
         </div>
 
         <div class="section">
-            <h3 class="tooltip">🛡️ Protective Strategies <span class="tooltiptext">Select multiple to apply protections.</span></h3>
-            <div id="protection-options"></div>
+            <h3 class="tooltip">🛡️ Protective Strategies <span class="tooltiptext">Select multiple (Ctrl/Cmd + click) to apply protections.</span></h3>
+            <select id="protection-select" multiple></select>
         </div>
 
         <div class="section">
@@ -868,16 +872,13 @@ document.addEventListener('DOMContentLoaded', () => {
         modeSel.appendChild(opt);
     });
 
-    // Protections
-    const protDiv = document.getElementById('protection-options');
+    // Protections as multi-select dropdown
+    const protSel = document.getElementById('protection-select');
     protectiveStrategies.forEach(s => {
-        const label = document.createElement('label');
-        const chk = document.createElement('input');
-        chk.type = 'checkbox';
-        chk.value = s.strategy;
-        label.appendChild(chk);
-        label.append(` ${s.strategy} (Eff: ${s.effectiveness.toFixed(2)})`);
-        protDiv.appendChild(label);
+        const opt = document.createElement('option');
+        opt.value = s.strategy;
+        opt.textContent = `${s.strategy} (Eff: ${s.effectiveness.toFixed(2)})`;
+        protSel.appendChild(opt);
     });
 
     // Buttons
@@ -908,8 +909,8 @@ function resetInputs() {
     document.getElementById('degradation-mode').selectedIndex = 0;
     document.getElementById('years').value = 25;
 
-    // Uncheck protections
-    document.querySelectorAll('#protection-options input').forEach(chk => chk.checked = false);
+    // Deselect protections
+    Array.from(document.getElementById('protection-select').options).forEach(opt => opt.selected = false);
 
     // Clear outputs
     if (mainChart) mainChart.destroy();
@@ -933,8 +934,10 @@ function runForecast() {
     const mode = degradationModes.find(d => d.mode === modeName);
     if (!mode) return alert('Select a degradation mode');
 
-    const selectedStrat = Array.from(document.querySelectorAll('#protection-options input:checked'))
-        .map(chk => protectiveStrategies.find(s => s.strategy === chk.value));
+    const protSel = document.getElementById('protection-select');
+    const selectedStrat = Array.from(protSel.options)
+        .filter(opt => opt.selected)
+        .map(opt => protectiveStrategies.find(s => s.strategy === opt.value));
 
     const years = parseInt(document.getElementById('years').value) || 25;
 
@@ -1053,8 +1056,10 @@ function runComparison() {
     const baseCountry = countries.find(c => c.country === document.getElementById('country-select').value);
     const baseMaterial = materials.find(m => m.material === document.getElementById('material-select').value);
     const baseMode = degradationModes.find(d => d.mode === document.getElementById('degradation-mode').value);
-    const baseStrategies = Array.from(document.querySelectorAll('#protection-options input:checked'))
-        .map(chk => protectiveStrategies.find(s => s.strategy === chk.value));
+    const protSel = document.getElementById('protection-select');
+    const baseStrategies = Array.from(protSel.options)
+        .filter(opt => opt.selected)
+        .map(opt => protectiveStrategies.find(s => s.strategy === opt.value));
 
     let configA = {label: '', country: baseCountry, material: baseMaterial, mode: baseMode, strategies: baseStrategies};
     let configB = {label: '', country: baseCountry, material: baseMaterial, mode: baseMode, strategies: baseStrategies};
